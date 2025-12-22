@@ -1,10 +1,10 @@
 # MyTestCondaProj
 
-A sample Conda project demonstrating Python code using the math package to perform various mathematical computations.
+A sample Conda project demonstrating Python code using the math package and NumPy to perform various mathematical computations.
 
 ## Description
 
-This project showcases a simple Python application that uses the built-in `math` package to perform and display various mathematical computations including:
+This project showcases a simple Python application that uses the built-in `math` package and `numpy` library to perform and display various mathematical computations including:
 - Trigonometric functions (sin, cos, tan)
 - Logarithmic and exponential functions
 - Power and square root calculations
@@ -13,6 +13,8 @@ This project showcases a simple Python application that uses the built-in `math`
 - Factorial calculations
 - Greatest Common Divisor (GCD)
 - Hyperbolic functions (sinh, cosh, tanh)
+- NumPy array operations (mean, standard deviation, sum)
+- NumPy matrix operations (determinant, transpose)
 
 ## Setup
 
