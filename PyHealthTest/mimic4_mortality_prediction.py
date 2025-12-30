@@ -182,7 +182,7 @@ def main():
     # Print comprehensive statistics about the final dataset
     print(f"\n  Overall Dataset (task_ds):")
     print(f"    - Total samples:           {len(task_ds):>6}")
-    print(f"    - Number of patients:      {len(set([sample['patient_id'] for sample in task_ds])):>6}")
+    print(f"    - Number of patients:      {len({sample['patient_id'] for sample in task_ds}):>6}")
     
     # Calculate label distribution (mortality rate)
     if len(task_ds) > 0:
@@ -195,15 +195,15 @@ def main():
     # Split-specific statistics
     print(f"\n  Training Set:")
     print(f"    - Samples:                 {len(train_ds):>6}")
-    print(f"    - Patients:                {len(set([sample['patient_id'] for sample in train_ds])):>6}")
+    print(f"    - Patients:                {len({sample['patient_id'] for sample in train_ds}):>6}")
     
     print(f"\n  Validation Set:")
     print(f"    - Samples:                 {len(val_ds):>6}")
-    print(f"    - Patients:                {len(set([sample['patient_id'] for sample in val_ds])):>6}")
+    print(f"    - Patients:                {len({sample['patient_id'] for sample in val_ds}):>6}")
     
     print(f"\n  Test Set:")
     print(f"    - Samples:                 {len(test_ds):>6}")
-    print(f"    - Patients:                {len(set([sample['patient_id'] for sample in test_ds])):>6}")
+    print(f"    - Patients:                {len({sample['patient_id'] for sample in test_ds}):>6}")
     
     # =========================================================================
     # Additional Information
