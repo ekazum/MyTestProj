@@ -17,25 +17,17 @@ from pyhealth.tasks import in_hospital_mortality_mimic4_fn
 from pyhealth.datasets import split_by_patient
 
 
-def main():
+def load_mimic4_dataset(root_path="/path/to/mimiciv/", dev=True):
     """
-    Main function to create and process MIMIC-IV mortality prediction dataset.
+    Load MIMIC-IV dataset with specified tables.
     
-    Pipeline Steps:
-    1. Load MIMIC-IV data
-    2. Apply mortality prediction task
-    3. Preprocess codes (NDC to ATC, ICD9CM to ICD10CM)
-    4. Split data into train/val/test sets
-    5. Inspect feature statistics
+    Args:
+        root_path (str): Path to MIMIC-IV data directory
+        dev (bool): If True, loads a small subset for testing/development
+    
+    Returns:
+        MIMIC4Dataset: Loaded dataset object
     """
-    
-    print("=" * 80)
-    print("MIMIC-IV Mortality Prediction Dataset Creation Pipeline")
-    print("=" * 80)
-    
-    # =========================================================================
-    # Step 1: Data Loading
-    # =========================================================================
     print("\n[Step 1] Loading MIMIC-IV Dataset...")
     print("-" * 80)
     
@@ -46,13 +38,13 @@ def main():
     # dev=True loads a small subset for testing/development purposes
     
     mimic4_dataset = MIMIC4Dataset(
-        root="/path/to/mimiciv/",
+        root=root_path,
         tables=[
             "diagnoses_icd",     # Patient diagnosis codes
             "procedures_icd",    # Patient procedure codes
             "prescriptions"      # Patient medication prescriptions
         ],
-        dev=True,  # Use development mode for testing with subset of data
+        dev=dev,  # Use development mode for testing with subset of data
         refresh_cache=False  # Use cached data if available to speed up loading
     )
     
@@ -60,9 +52,19 @@ def main():
     print(f"  - Number of patients: {len(mimic4_dataset.patients)}")
     print(f"  - Tables loaded: {', '.join(mimic4_dataset.tables)}")
     
-    # =========================================================================
-    # Step 2: Task Definition
-    # =========================================================================
+    return mimic4_dataset
+
+
+def apply_mortality_prediction_task(mimic4_dataset):
+    """
+    Apply in-hospital mortality prediction task to the dataset.
+    
+    Args:
+        mimic4_dataset (MIMIC4Dataset): The loaded MIMIC-IV dataset
+    
+    Returns:
+        Dataset: Task-specific dataset with mortality labels
+    """
     print("\n[Step 2] Applying In-Hospital Mortality Prediction Task...")
     print("-" * 80)
     
@@ -78,9 +80,23 @@ def main():
     print(f"  - Task type: In-Hospital Mortality Prediction")
     print(f"  - Number of samples: {len(task_ds)}")
     
-    # =========================================================================
-    # Step 3: Preprocessing - Code Mapping
-    # =========================================================================
+    return task_ds
+
+
+def preprocess_medical_codes(task_ds):
+    """
+    Map medical codes to standardized formats.
+    
+    Performs two mappings:
+    1. NDC to ATC Level 3 (drug codes)
+    2. ICD9CM to ICD10CM (diagnosis/procedure codes)
+    
+    Args:
+        task_ds (Dataset): Task dataset to preprocess
+    
+    Returns:
+        Dataset: Preprocessed dataset with mapped codes
+    """
     print("\n[Step 3] Preprocessing - Mapping Medical Codes...")
     print("-" * 80)
     
@@ -109,21 +125,33 @@ def main():
     )
     print(f"     ✓ ICD9CM codes mapped to ICD10CM")
     
-    # =========================================================================
-    # Step 4: Data Splitting
-    # =========================================================================
+    return task_ds
+
+
+def split_dataset(task_ds, ratios=[0.8, 0.1, 0.1], seed=42):
+    """
+    Split dataset into train/validation/test sets by patient.
+    
+    Args:
+        task_ds (Dataset): Dataset to split
+        ratios (list): Split ratios [train, val, test]. Default: [0.8, 0.1, 0.1]
+        seed (int): Random seed for reproducibility. Default: 42
+    
+    Returns:
+        tuple: (train_ds, val_ds, test_ds)
+    """
     print("\n[Step 4] Splitting Data into Train/Validation/Test Sets...")
     print("-" * 80)
     
     # Split data by patient to prevent data leakage
     # - Each patient's data stays in one split (train, val, or test)
     # - Ratios: 80% train, 10% validation, 10% test
-    # - seed=42 ensures reproducibility
+    # - seed ensures reproducibility
     
     train_ds, val_ds, test_ds = split_by_patient(
         task_ds,
-        ratios=[0.8, 0.1, 0.1],  # 80% train, 10% val, 10% test
-        seed=42                   # Random seed for reproducibility
+        ratios=ratios,  # 80% train, 10% val, 10% test
+        seed=seed       # Random seed for reproducibility
     )
     
     print(f"✓ Data split completed")
@@ -131,9 +159,16 @@ def main():
     print(f"  - Validation set size: {len(val_ds):>6} samples ({len(val_ds)/len(task_ds)*100:.1f}%)")
     print(f"  - Test set size:       {len(test_ds):>6} samples ({len(test_ds)/len(task_ds)*100:.1f}%)")
     
-    # =========================================================================
-    # Step 5: Feature Tokenization and Vocabulary Inspection
-    # =========================================================================
+    return train_ds, val_ds, test_ds
+
+
+def inspect_vocabulary_statistics(task_ds):
+    """
+    Inspect and print vocabulary statistics for different feature types.
+    
+    Args:
+        task_ds (Dataset): Task dataset with vocabularies
+    """
     print("\n[Step 5] Feature Tokenization - Inspecting Vocabulary Statistics...")
     print("-" * 80)
     
@@ -172,10 +207,18 @@ def main():
     print("    - vocab.word2idx: mapping from codes to indices")
     print("    - vocab.idx2word: mapping from indices to codes")
     print("    - vocab.size(): total vocabulary size")
+
+
+def print_dataset_statistics(task_ds, train_ds, val_ds, test_ds):
+    """
+    Print comprehensive statistics about the dataset and splits.
     
-    # =========================================================================
-    # Step 6: Output Final Statistics
-    # =========================================================================
+    Args:
+        task_ds (Dataset): Complete task dataset
+        train_ds (Dataset): Training split
+        val_ds (Dataset): Validation split
+        test_ds (Dataset): Test split
+    """
     print("\n[Step 6] Final Dataset Statistics...")
     print("-" * 80)
     
@@ -204,10 +247,10 @@ def main():
     print(f"\n  Test Set:")
     print(f"    - Samples:                 {len(test_ds):>6}")
     print(f"    - Patients:                {len({sample['patient_id'] for sample in test_ds}):>6}")
-    
-    # =========================================================================
-    # Additional Information
-    # =========================================================================
+
+
+def print_next_steps():
+    """Print information about next steps in the pipeline."""
     print("\n" + "=" * 80)
     print("Pipeline Completed Successfully!")
     print("=" * 80)
@@ -224,6 +267,47 @@ def main():
     print("    for batch in train_loader:")
     print("        # batch contains tokenized features and labels")
     print("        pass")
+
+
+def main():
+    """
+    Main function to create and process MIMIC-IV mortality prediction dataset.
+    
+    Pipeline Steps:
+    1. Load MIMIC-IV data
+    2. Apply mortality prediction task
+    3. Preprocess codes (NDC to ATC, ICD9CM to ICD10CM)
+    4. Split data into train/val/test sets
+    5. Inspect feature statistics
+    6. Print dataset statistics
+    
+    Returns:
+        tuple: (task_ds, train_ds, val_ds, test_ds)
+    """
+    print("=" * 80)
+    print("MIMIC-IV Mortality Prediction Dataset Creation Pipeline")
+    print("=" * 80)
+    
+    # Step 1: Load MIMIC-IV dataset
+    mimic4_dataset = load_mimic4_dataset(root_path="/path/to/mimiciv/", dev=True)
+    
+    # Step 2: Apply mortality prediction task
+    task_ds = apply_mortality_prediction_task(mimic4_dataset)
+    
+    # Step 3: Preprocess medical codes
+    task_ds = preprocess_medical_codes(task_ds)
+    
+    # Step 4: Split dataset into train/val/test
+    train_ds, val_ds, test_ds = split_dataset(task_ds)
+    
+    # Step 5: Inspect vocabulary statistics
+    inspect_vocabulary_statistics(task_ds)
+    
+    # Step 6: Print final statistics
+    print_dataset_statistics(task_ds, train_ds, val_ds, test_ds)
+    
+    # Print next steps
+    print_next_steps()
     
     return task_ds, train_ds, val_ds, test_ds
 
