@@ -1,4 +1,4 @@
-# MyTestCondaProj
+# MyTestProj
 
 A sample Conda project demonstrating Python code using the math package and NumPy to perform various mathematical computations.
 
