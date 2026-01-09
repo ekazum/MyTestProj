@@ -1,7 +1,11 @@
-name: mytestconda
+name: MyTestProj
 channels:
   - defaults
 dependencies:
   - python=3.13
   - numpy
+  - pandas=2.3.3
   - pip
+  - pip:
+#    - torch
+    - -e C:/Python/PyHealth
