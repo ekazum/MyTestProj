@@ -16,11 +16,13 @@ import numpy as np
 import tempfile
 import os
 import shutil
-from pathlib import Path
 
 
 class TestMimic4DataProcessing(unittest.TestCase):
     """Test suite for MIMIC-IV data processing pipeline."""
+    
+    # Class constants
+    EMBEDDING_DIM = 768  # ModernBERT typical dimension
     
     @classmethod
     def setUpClass(cls):
@@ -46,6 +48,21 @@ class TestMimic4DataProcessing(unittest.TestCase):
         """Clean up test environment after all tests."""
         os.chdir(cls.original_dir)
         shutil.rmtree(cls.test_dir)
+    
+    def _create_mock_embeddings(self, num_samples, dim=None):
+        """
+        Helper method to create mock embeddings for testing.
+        
+        Args:
+            num_samples: Number of embeddings to create
+            dim: Dimension of each embedding (defaults to EMBEDDING_DIM)
+        
+        Returns:
+            numpy array of mock embeddings
+        """
+        if dim is None:
+            dim = self.EMBEDDING_DIM
+        return np.random.randn(num_samples, dim)
     
     def test_01_patient_data_loading(self):
         """Test that patient data is loaded correctly with required columns."""
@@ -246,10 +263,9 @@ class TestMimic4DataProcessing(unittest.TestCase):
         """Test that embeddings have correct structure and dimensions."""
         # Create mock embeddings (simulating the model output)
         num_patients = len(self.sample_data)
-        embedding_dim = 768  # ModernBERT typical dimension
         
         # Simulate embedding generation
-        mock_embeddings = np.random.randn(num_patients, embedding_dim)
+        mock_embeddings = self._create_mock_embeddings(num_patients)
         
         # Verify shape
         self.assertEqual(
@@ -259,8 +275,8 @@ class TestMimic4DataProcessing(unittest.TestCase):
         )
         self.assertEqual(
             mock_embeddings.shape[1],
-            embedding_dim,
-            f"Each embedding should have {embedding_dim} dimensions"
+            self.EMBEDDING_DIM,
+            f"Each embedding should have {self.EMBEDDING_DIM} dimensions"
         )
         
         # Verify data type
@@ -278,8 +294,7 @@ class TestMimic4DataProcessing(unittest.TestCase):
         
         # Create mock embeddings
         num_patients = len(patients_df)
-        embedding_dim = 768
-        mock_embeddings = np.random.randn(num_patients, embedding_dim)
+        mock_embeddings = self._create_mock_embeddings(num_patients)
         
         # Create embeddings DataFrame as in the notebook
         embeddings_df = pd.DataFrame({
@@ -308,8 +323,8 @@ class TestMimic4DataProcessing(unittest.TestCase):
             )
             self.assertEqual(
                 len(embedding),
-                embedding_dim,
-                f"Each embedding should have {embedding_dim} dimensions"
+                self.EMBEDDING_DIM,
+                f"Each embedding should have {self.EMBEDDING_DIM} dimensions"
             )
     
     def test_09_parquet_file_creation_embeddings(self):
@@ -321,8 +336,7 @@ class TestMimic4DataProcessing(unittest.TestCase):
         
         # Create mock embeddings
         num_patients = len(patients_df)
-        embedding_dim = 768
-        mock_embeddings = np.random.randn(num_patients, embedding_dim)
+        mock_embeddings = self._create_mock_embeddings(num_patients)
         
         embeddings_df = pd.DataFrame({
             "subject_id": patients_df["subject_id"].values,
@@ -380,8 +394,7 @@ class TestMimic4DataProcessing(unittest.TestCase):
         
         # Step 5: Generate mock embeddings
         num_patients = len(patients_text_df)
-        embedding_dim = 768
-        mock_embeddings = np.random.randn(num_patients, embedding_dim)
+        mock_embeddings = self._create_mock_embeddings(num_patients)
         
         # Step 6: Create embeddings DataFrame
         embeddings_df = pd.DataFrame({
@@ -457,12 +470,11 @@ class TestMimic4DataProcessing(unittest.TestCase):
         
         batch_size = 2
         all_embeddings = []
-        embedding_dim = 768
         
         # Process in batches (simulating the notebook's get_embeddings function)
         for i in range(0, len(patient_texts), batch_size):
             batch_texts = patient_texts[i:i + batch_size]
-            batch_embeddings = np.random.randn(len(batch_texts), embedding_dim)
+            batch_embeddings = self._create_mock_embeddings(len(batch_texts))
             all_embeddings.append(batch_embeddings)
         
         # Combine all batches
@@ -476,7 +488,7 @@ class TestMimic4DataProcessing(unittest.TestCase):
         )
         self.assertEqual(
             final_embeddings.shape[1],
-            embedding_dim,
+            self.EMBEDDING_DIM,
             "Should have correct embedding dimension"
         )
 
